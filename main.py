@@ -32,12 +32,6 @@ add_apresenta = ("INSERT INTO apresenta"
                  "(doença_id, sintoma_id, frequencia)"
                  "VALUES (%(doença_id)s, %(sintoma_id)s, %(frequencia)s)")
 
-def lista_elementos():
-    cursor.execute('SELECT * FROM patogeno;')
-    r = cursor.fetchone()
-    for r in cursor:
-        print(r)
-
 def inserir_patogeno():
     data_patogeno = {
         'id': int(input("Digite o ID do patogeno: ")),
@@ -77,7 +71,7 @@ def inserir_sintoma():
     try:
         cursor.execute(add_sintoma, data_sintoma)
         conexao.commit()
-        print("Sistoma inserido com sucesso!")
+        print("Sintoma inserido com sucesso!")
     except mysql.connector.Error as err:
         if err:
             print(f"Erro: {err}")
@@ -113,6 +107,85 @@ def inserir_apresenta():
         else:
             print(f"Erro: {err}")
 
+def lista_doenca():
+    try:
+        cursor.execute('SELECT * FROM doença;')
+        linhas = cursor.fetchall()
+        if linhas:
+            print("+----+---------------------+----------+------------+")
+            print("| ID | Nome Técnico        | CID      | ID Patógeno|")
+            print("+----+---------------------+----------+------------+")
+            for (id, nome_tecnico, CID, id_patogeno) in linhas:
+                print(f"| {str(id).ljust(2)} | {nome_tecnico.ljust(19)} | {CID.ljust(8)} | {str(id_patogeno).ljust(10)} |")
+            print("+----+---------------------+----------+------------+")
+        else:
+            print("Nenhuma doença encontrada.")
+    except mysql.connector.Error as err:
+        print(f"Erro: {err}")
+
+def pesquisar_doenca():
+    criterio = input("Pesquisar por (nome_tecnico, nome_popular, CID, patogeno): ")
+    if criterio not in ["nome_tecnico", "nome_popular", "CID", "patogeno"]:
+        print("Critério indefinido.")
+        return
+    
+    valor = input(f"Digite o valor para {criterio}: ")
+
+    if criterio == "nome_tecnico":
+        query = "SELECT * FROM doença WHERE nome_tecnico = %s"
+    elif criterio == "nome_popular":
+        query = ("SELECT d.* FROM doença d "
+                 "JOIN nomes_populares np ON d.id = np.doença_id "
+                 "WHERE np.nome = %s")
+    elif criterio == "CID":
+        query = "SELECT * FROM doença WHERE CID = %s"
+    elif criterio == "patogeno":
+        query = ("SELECT d.* FROM doença d "
+                 "JOIN patogeno p ON d.id_patogeno = p.id "
+                 "WHERE p.nome = %s")
+
+    try:
+        cursor.execute(query, (valor,))
+        r = cursor.fetchall()
+        if not r:
+            print("Nenhuma doença encontrada com o critério fornecido.")
+        else:
+            print("+----+---------------------+----------+------------+----------------------------------------------+")
+            print("| ID | Nome Técnico        | CID      | ID Patógeno| Sintomas                                     |")
+            print("+----+---------------------+----------+------------+----------------------------------------------+")
+
+            for (id, nome_tecnico, CID, id_patogeno) in r:
+                sintomas = listar_sintomas(id)
+                print(f"| {str(id).ljust(2)} | {nome_tecnico.ljust(19)} | {CID.ljust(8)} | {str(id_patogeno).ljust(10)} | {sintomas.ljust(44)} |")
+                print("+----+---------------------+----------+------------+----------------------------------------------+")
+
+    except mysql.connector.Error as err:
+        print(f"Erro: {err}")
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
+
+def listar_sintomas(doenca_id):
+    try:
+        query = ("""
+            SELECT GROUP_CONCAT(CONCAT(s.nome, '(', a.frequencia, ')') 
+            ORDER BY FIELD(a.frequencia, 'muito comum', 'comum', 'pouco comum', 'raro', 'muito raro')) AS sintomas
+            FROM sintomas s
+            JOIN apresenta a ON s.id = a.sintoma_id
+            WHERE a.doença_id = %s
+        """)
+        cursor.execute(query, (doenca_id,))
+        row = cursor.fetchone()
+
+        if row and row[0]:
+            return row[0]
+        else:
+            return "Nenhum sintoma encontrado"
+
+    except mysql.connector.Error as err:
+        print(f"Erro: {err}")
+        return "Erro ao buscar sintomas"
+
+
 def menu():
     while True:
         print("\nMenu:")
@@ -121,7 +194,9 @@ def menu():
         print("3. Inserir Nome Popular")
         print("4. Inserir Apresentação")
         print("5. Inserir Patogeno")
-        print("6. Sair")
+        print("6. Listar Doença")
+        print("7. Pesquisar Doença")
+        print("0. Sair")
         escolha = input("Escolha uma opção: ")
 
         if escolha == '1':
@@ -135,6 +210,10 @@ def menu():
         elif escolha == '5':
             inserir_patogeno()
         elif escolha == '6':
+            lista_doenca()
+        elif escolha == '7':
+            pesquisar_doenca()
+        elif escolha == '0':
             print("Saindo...")
             break
         else:
