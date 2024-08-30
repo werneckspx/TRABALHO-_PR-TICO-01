@@ -141,23 +141,29 @@ peso correspondente à taxa de ocorrência do sintoma.
 pontuação da doença é decrementada em 1 ponto.  
 4. As doenças são ordenadas em ordem decrescente em relação ao total de pontos obtidos.*/
 
-SELECT d.id, d.nome_tecnico AS Doença,
-    SUM(
-        CASE 
-            WHEN s.nome IN ('Fadiga', 'Tosse', 'Febre', 'Diarreia') THEN
-                CASE a.frequencia 
-                    WHEN 'muito comum' THEN 5
-                    WHEN 'comum' THEN 4
-                    WHEN 'pouco comum' THEN 3
-                    WHEN 'raro' THEN 2
-                    WHEN 'muito raro' THEN 1
-                    ELSE -1
-                END
-            ELSE -1
-        END
-    )-1 AS Peso_Total  #< 3 você soma, > 3 você subtrai#
-FROM doença AS d
-LEFT JOIN apresenta AS a ON d.id = a.doença_id
-LEFT JOIN sintomas AS s ON s.id = a.sintoma_id
-GROUP BY d.id, d.nome_tecnico
-ORDER BY Peso_Total DESC;
+SELECT
+	id,
+	d.nome_tecnico AS Doença,
+	GROUP_CONCAT(DISTINCT CONCAT(consulta.nome, '(', consulta.pesos_numericos, ')') ORDER BY consulta.nome SEPARATOR ', ') AS Sintomas,
+	SUM(CASE WHEN nome = 'Febre' THEN pesos_numericos ELSE 0 END) +
+	SUM(CASE WHEN nome = 'Diarréia' THEN pesos_numericos ELSE 0 END) -
+	COUNT(CASE WHEN nome NOT IN ('Febre', 'Diarréia') THEN 1 ELSE NULL END) AS Total
+FROM (
+	SELECT 
+		a.doença_id,
+		s.nome,
+		d.nome_tecnico,
+		CASE 
+		   WHEN a.frequencia = 'muito comum' 	THEN 5
+		   WHEN a.frequencia = 'comum' 			THEN 4
+		   WHEN a.frequencia = 'pouco comum' 	THEN 3
+		   WHEN a.frequencia = 'raro' 			THEN 2
+		   WHEN a.frequencia = 'muito raro' 	THEN 1
+		END AS pesos_numericos
+	FROM apresenta AS a
+	JOIN sintomas AS s ON s.id = a.sintoma_id
+	JOIN doença AS d ON d.id = a.doença_id
+) AS consulta
+JOIN doença AS d ON d.id = doença_id
+GROUP BY id, d.nome_tecnico
+ORDER BY Total DESC;

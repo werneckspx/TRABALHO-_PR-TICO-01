@@ -13,16 +13,16 @@ else:
     print('Não foi possível conectar ao Banco de Dados')
     
 add_patogeno = ("INSERT INTO patogeno"
-              "(id, nome, tipo)"
-              "VALUES (%(id)s, %(nome)s, %(tipo)s)")
+              "(nome, tipo)"
+              "VALUES (%(nome)s, %(tipo)s)")
 
 add_doenca = ("INSERT INTO doença"
-              "(id, nome_tecnico, CID, id_patogeno)"
-              "VALUES (%(id)s, %(nome_tecnico)s, %(CID)s, %(id_patogeno)s)")
+              "(nome_tecnico, CID, id_patogeno)"
+              "VALUES (%(nome_tecnico)s, %(CID)s, %(id_patogeno)s)")
 
 add_sintoma = ("INSERT INTO sintomas"
-               "(id, nome)"
-               "VALUES (%(id)s, %(nome)s)")
+               "(nome)"
+               "VALUES (%(nome)s)")
 
 add_nome_popular = ("INSERT INTO nomes_populares"
                     "(doença_id, nome)"
@@ -34,9 +34,8 @@ add_apresenta = ("INSERT INTO apresenta"
 
 def inserir_patogeno():
     data_patogeno = {
-        'id': int(input("Digite o ID do patogeno: ")),
         'nome': input("Digite o nome do patogeno: "),
-        'tipo': input("Digite o nome do patogeno: ")
+        'tipo': input("Digite o tipo do patogeno: ")
     }
     try:
         cursor.execute(add_patogeno, data_patogeno)
@@ -48,7 +47,6 @@ def inserir_patogeno():
 
 def inserir_doenca():
     data_doenca = {
-        'id': int(input("Digite o ID da doença: ")),
         'nome_tecnico': input("Digite o nome técnico da doença: "),
         'CID': input("Digite o CID da doença: "),
         'id_patogeno': int(input("Digite o ID do patógeno: "))
@@ -65,7 +63,6 @@ def inserir_doenca():
 
 def inserir_sintoma():
     data_sintoma = {
-        'id': int(input("Digite o ID do sintoma: ")),
         'nome': input("Digite o nome do sintoma: ")
     }
     try:
@@ -123,6 +120,22 @@ def lista_doenca():
     except mysql.connector.Error as err:
         print(f"Erro: {err}")
 
+def lista_sintomas():
+    try:
+        cursor.execute('SELECT * FROM sintomas;')
+        linhas = cursor.fetchall()
+        if linhas:
+            print("+----+---------------------+")
+            print("| ID | Sintoma             |")
+            print("+----+---------------------+")
+            for (id, nome) in linhas:
+                print(f"| {str(id).ljust(2)} | {nome.ljust(19)} | ")
+            print("+----+---------------------+")
+        else:
+            print("Nenhum sintoma encontrado.")
+    except mysql.connector.Error as err:
+        print(f"Erro: {err}")
+
 def pesquisar_doenca():
     criterio = input("Pesquisar por (nome_tecnico, nome_popular, CID, patogeno): ")
     if criterio not in ["nome_tecnico", "nome_popular", "CID", "patogeno"]:
@@ -150,14 +163,14 @@ def pesquisar_doenca():
         if not r:
             print("Nenhuma doença encontrada com o critério fornecido.")
         else:
-            print("+----+---------------------+----------+------------+----------------------------------------------+")
-            print("| ID | Nome Técnico        | CID      | ID Patógeno| Sintomas                                     |")
-            print("+----+---------------------+----------+------------+----------------------------------------------+")
+            print("+----+---------------------+----------+------------+-----------------------------------------------------------------------------------+")
+            print("| ID | Nome Técnico        | CID      | ID Patógeno| Sintomas                                                                          |")
+            print("+----+---------------------+----------+------------+-----------------------------------------------------------------------------------+")
 
             for (id, nome_tecnico, CID, id_patogeno) in r:
                 sintomas = listar_sintomas(id)
-                print(f"| {str(id).ljust(2)} | {nome_tecnico.ljust(19)} | {CID.ljust(8)} | {str(id_patogeno).ljust(10)} | {sintomas.ljust(44)} |")
-                print("+----+---------------------+----------+------------+----------------------------------------------+")
+            print(f"| {str(id).ljust(2)} | {nome_tecnico.ljust(19)} | {CID.ljust(8)} | {str(id_patogeno).ljust(10)} | {sintomas.ljust(44)}                |")
+            print("+----+---------------------+----------+------------+-----------------------------------------------------------------------------------+")
 
     except mysql.connector.Error as err:
         print(f"Erro: {err}")
@@ -194,8 +207,9 @@ def menu():
         print("3. Inserir Nome Popular")
         print("4. Inserir Apresentação")
         print("5. Inserir Patogeno")
-        print("6. Listar Doença")
-        print("7. Pesquisar Doença")
+        print("6. Listar Doenças")
+        print("7. Listar Sintomas")
+        print("8. Pesquisar Doença")
         print("0. Sair")
         escolha = input("Escolha uma opção: ")
 
@@ -212,6 +226,8 @@ def menu():
         elif escolha == '6':
             lista_doenca()
         elif escolha == '7':
+            lista_sintomas()    
+        elif escolha == '8':
             pesquisar_doenca()
         elif escolha == '0':
             print("Saindo...")
