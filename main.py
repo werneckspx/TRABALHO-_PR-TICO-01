@@ -4,7 +4,7 @@ from mysql.connector import errorcode
 conexao = mysql.connector.connect(host='localhost',
                                   database='doenca',
                                   user='root',
-                                  password='felipe')
+                                  password='pardal5link')
 
 if conexao.is_connected():
     print('Conectado ao Banco de Dados!')
@@ -137,22 +137,26 @@ def lista_sintomas():
         print(f"Erro: {err}")
 
 def pesquisar_doenca():
-    criterio = input("Pesquisar por (nome_tecnico, nome_popular, CID, patogeno): ")
-    if criterio not in ["nome_tecnico", "nome_popular", "CID", "patogeno"]:
+    print("1. Nome tecnico")
+    print("2. Nome popular")
+    print("3. CID")
+    print("4. Patogeno")
+    criterio = input("Pesquisar por: ")
+    if criterio not in ["1", "2", "3", "4"]:
         print("Critério indefinido.")
         return
     
-    valor = input(f"Digite o valor para {criterio}: ")
+    valor = input(f"Digite conforme o criterio de pesquisa selecionado: ")
 
-    if criterio == "nome_tecnico":
+    if criterio == "1":
         query = "SELECT * FROM doença WHERE nome_tecnico = %s"
-    elif criterio == "nome_popular":
+    elif criterio == "2":
         query = ("SELECT d.* FROM doença d "
                  "JOIN nomes_populares np ON d.id = np.doença_id "
                  "WHERE np.nome = %s")
-    elif criterio == "CID":
+    elif criterio == "3":
         query = "SELECT * FROM doença WHERE CID = %s"
-    elif criterio == "patogeno":
+    elif criterio == "48":
         query = ("SELECT d.* FROM doença d "
                  "JOIN patogeno p ON d.id_patogeno = p.id "
                  "WHERE p.nome = %s")
