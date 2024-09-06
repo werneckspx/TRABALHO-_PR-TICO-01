@@ -1,5 +1,14 @@
 import mysql.connector
+import logging
 from mysql.connector import errorcode
+
+logging.basicConfig(filename='sistema.log', 
+                    level=logging.INFO, 
+                    format='%(asctime)s - %(levelname)s - %(message)s', 
+                    datefmt='%Y-%m-%d %H:%M:%S')
+
+def log_operacao(operacao, detalhes=""):
+    logging.info(f"{operacao} - {detalhes}")
 
 conexao = mysql.connector.connect(host='localhost',
                                   database='doenca',
@@ -41,6 +50,7 @@ def inserir_patogeno():
         cursor.execute(add_patogeno, data_patogeno)
         conexao.commit()
         print("Patogeno inserido com sucesso!")
+        log_operacao("Insercao de Patogeno", f"Nome: {data_patogeno['nome']}, Tipo: {data_patogeno['tipo']}")
     except mysql.connector.Error as err:
         if err:
             print(f"Erro: {err}")
@@ -55,6 +65,7 @@ def inserir_doenca():
         cursor.execute(add_doenca, data_doenca)
         conexao.commit()
         print("Doença inserida com sucesso!")
+        log_operacao("Insercao de Doenca", f"Nome Tecnico: {data_doenca['nome_tecnico']}, CID: {data_doenca['CID']}")
     except mysql.connector.Error as err:
         if err.errno == errorcode.ER_NO_REFERENCED_ROW_2:
             print("Erro: O patógeno com o ID fornecido não existe.")
@@ -69,6 +80,7 @@ def inserir_sintoma():
         cursor.execute(add_sintoma, data_sintoma)
         conexao.commit()
         print("Sintoma inserido com sucesso!")
+        log_operacao("Insercao de Sintoma", f"Nome: {data_sintoma['nome']}")
     except mysql.connector.Error as err:
         if err:
             print(f"Erro: {err}")
@@ -82,6 +94,7 @@ def inserir_nome_popular():
         cursor.execute(add_nome_popular, data_nome_popular)
         conexao.commit()
         print("Nome popular inserido com sucesso!")
+        log_operacao("Insercao de Nome Popular", f"Doenca ID: {data_nome_popular['doença_id']}, Nome: {data_nome_popular['nome']}")
     except mysql.connector.Error as err:
         if err.errno == errorcode.ER_NO_REFERENCED_ROW_2:
             print("Erro: A doença com o ID fornecido não existe.")
@@ -98,6 +111,7 @@ def inserir_apresenta():
         cursor.execute(add_apresenta, data_apresenta)
         conexao.commit()
         print("Dados inseridos com sucesso!")
+        log_operacao("Insercao de Apresentacao", f"Doenca ID: {data_apresenta['doença_id']}, Sintoma ID: {data_apresenta['sintoma_id']}, Frequencia: {data_apresenta['frequencia']}")
     except mysql.connector.Error as err:
         if err.errno == errorcode.ER_NO_REFERENCED_ROW_2:
             print("Erro: A doença ou sintoma com o ID fornecido não existe.")
@@ -117,6 +131,7 @@ def lista_doenca():
             print("+----+---------------------+----------+------------+")
         else:
             print("Nenhuma doença encontrada.")
+        log_operacao("Listagem de Doencas")
     except mysql.connector.Error as err:
         print(f"Erro: {err}")
 
@@ -133,6 +148,7 @@ def lista_sintomas():
             print("+----+---------------------+")
         else:
             print("Nenhum sintoma encontrado.")
+        log_operacao("Listagem de Sintomas")
     except mysql.connector.Error as err:
         print(f"Erro: {err}")
 
@@ -175,7 +191,7 @@ def pesquisar_doenca():
                 sintomas = listar_sintomas(id)
             print(f"| {str(id).ljust(2)} | {nome_tecnico.ljust(19)} | {CID.ljust(8)} | {str(id_patogeno).ljust(10)} | {sintomas.ljust(44)}                |")
             print("+----+---------------------+----------+------------+-----------------------------------------------------------------------------------+")
-
+        log_operacao("Pesquisa de Doenca", f"Criterio: {criterio}, Valor: {valor}")
     except mysql.connector.Error as err:
         print(f"Erro: {err}")
     except Exception as e:
@@ -234,6 +250,7 @@ def menu():
         elif escolha == '8':
             pesquisar_doenca()
         elif escolha == '0':
+            log_operacao("Saida do sistema")
             print("Saindo...")
             break
         else:
