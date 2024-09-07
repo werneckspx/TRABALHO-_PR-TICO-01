@@ -36,7 +36,3 @@ CREATE TABLE apresenta (
 	CONSTRAINT FOREIGN KEY(doença_id) REFERENCES doença(id),
 	CONSTRAINT FOREIGN KEY(sintoma_id) REFERENCES sintomas(id)
 );
-
-
-
-SHOW TABLES;
