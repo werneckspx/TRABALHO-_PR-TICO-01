@@ -21,7 +21,7 @@ def log_operacao(operacao, detalhes=""):
 conexao = mysql.connector.connect(host='localhost',
                                   database='doenca',
                                   user='root',
-                                  password='pardal5link')
+                                  password='felipe')
 
 if conexao.is_connected():
     print('Conectado ao Banco de Dados!')
@@ -51,34 +51,18 @@ add_apresenta = ("INSERT INTO apresenta"
 
 def inserir_patogeno():
     data_patogeno = {
-        'nome': input("Digite o nome do patogeno: "),
-        'tipo': input("Digite o tipo do patogeno: ")
+        'nome': input("Digite o nome do patógeno: "),
+        'tipo': input("Digite o tipo do patógeno: ")
     }
     try:
         cursor.execute(add_patogeno, data_patogeno)
         conexao.commit()
-        print("Patogeno inserido com sucesso!")
-        log_operacao("Insercao de Patogeno", f"Nome: {data_patogeno['nome']}, Tipo: {data_patogeno['tipo']}")
+        print("Patógeno inserido com sucesso!")
+        log_operacao("Inserção de Patógeno", f"Nome: {data_patogeno['nome']}, Tipo: {data_patogeno['tipo']}")
+        return cursor.lastrowid  # Retorna o ID do patógeno recém inserido
     except mysql.connector.Error as err:
-        if err:
-            print(f"Erro: {err}")
-
-def inserir_doenca():
-    data_doenca = {
-        'nome_tecnico': input("Digite o nome técnico da doença: "),
-        'CID': input("Digite o CID da doença: "),
-        'id_patogeno': int(input("Digite o ID do patógeno: "))
-    }
-    try:
-        cursor.execute(add_doenca, data_doenca)
-        conexao.commit()
-        print("Doença inserida com sucesso!")
-        log_operacao("Insercao de Doenca", f"Nome Tecnico: {data_doenca['nome_tecnico']}, CID: {data_doenca['CID']}")
-    except mysql.connector.Error as err:
-        if err.errno == errorcode.ER_NO_REFERENCED_ROW_2:
-            print("Erro: O patógeno com o ID fornecido não existe.")
-        else:
-            print(f"Erro: {err}")
+        print(f"Erro: {err}")
+        return None
 
 def inserir_sintoma():
     data_sintoma = {
@@ -92,6 +76,71 @@ def inserir_sintoma():
     except mysql.connector.Error as err:
         if err:
             print(f"Erro: {err}")
+            
+def inserir_doenca():
+    data_doenca = {
+        'nome_tecnico': input("Digite o nome técnico da doença: "),
+        'CID': input("Digite o CID da doença: ")
+    }
+    lista_patogeno()
+    id_patogeno = int(input("Digite o ID do patógeno (0 para inserir novo patógeno): "))
+
+    if id_patogeno == 0:
+        id_patogeno = inserir_patogeno() 
+        if id_patogeno is None:
+            print("Erro ao inserir patógeno. Processo cancelado.")
+            return
+
+    data_doenca['id_patogeno'] = id_patogeno
+
+    try:
+        cursor.execute(add_doenca, data_doenca)
+        conexao.commit()
+        print("Doença inserida com sucesso!")
+        log_operacao("Inserção de Doença", f"Nome Técnico: {data_doenca['nome_tecnico']}, CID: {data_doenca['CID']}")
+        id_doenca = cursor.lastrowid 
+
+        opcao = input("Deseja inserir um nome popular para a doença? (s/n): ").lower()
+        if opcao == 's':
+            inserir_nome_popular_com_parametro(id_doenca)
+
+        opcao = input("Deseja associar sintomas à doença? (s/n): ").lower()
+        if opcao == 's':
+            lista_sintomas()
+            inserir_apresenta_com_parametro(id_doenca)
+
+    except mysql.connector.Error as err:
+        if err.errno == errorcode.ER_NO_REFERENCED_ROW_2:
+            print("Erro: o patogeno com o ID fornecido não existe.")
+        else:
+            print(f"Erro!")
+
+def inserir_nome_popular_com_parametro(id_doenca):
+    data_nome_popular = {
+        'doença_id': id_doenca,
+        'nome': input("Digite o nome popular: ")
+    }
+    try:
+        cursor.execute(add_nome_popular, data_nome_popular)
+        conexao.commit()
+        print("Nome popular inserido com sucesso!")
+        log_operacao("Inserção de Nome Popular", f"Doença ID: {data_nome_popular['doença_id']}, Nome: {data_nome_popular['nome']}")
+    except mysql.connector.Error as err:
+        print(f"Erro: {err}")
+
+def inserir_apresenta_com_parametro(id_doenca):
+    data_apresenta = {
+        'doença_id': id_doenca,
+        'sintoma_id': int(input("Digite o ID do sintoma: ")),
+        'frequencia': input("Digite a frequência: ")
+    }
+    try:
+        cursor.execute(add_apresenta, data_apresenta)
+        conexao.commit()
+        print("Associação de sintoma inserida com sucesso!")
+        log_operacao("Inserção de Associação de Sintoma", f"Doença ID: {data_apresenta['doença_id']}, Sintoma ID: {data_apresenta['sintoma_id']}, Frequência: {data_apresenta['frequencia']}")
+    except mysql.connector.Error as err:
+        print(f"Erro: {err}")
 
 def inserir_nome_popular():
     data_nome_popular = {
@@ -157,6 +206,23 @@ def lista_sintomas():
         else:
             print("Nenhum sintoma encontrado.")
         log_operacao("Listagem de Sintomas")
+    except mysql.connector.Error as err:
+        print(f"Erro: {err}")
+        
+def lista_patogeno():
+    try:
+        cursor.execute('SELECT * FROM patogeno;')
+        linhas = cursor.fetchall()
+        if linhas:
+            print("+----+---------------------+---------------------+")
+            print("| ID | Patogeno             | Tipo                |")
+            print("+----+---------------------+---------------------+")
+            for (id, nome, tipo) in linhas:
+                print(f"| {str(id).ljust(2)} | {nome.ljust(19)} |  {tipo.ljust(19)} | ")
+            print("+----+---------------------+")
+        else:
+            print("Nenhum patogeno encontrado.")
+        log_operacao("Listagem de Patogeno")
     except mysql.connector.Error as err:
         print(f"Erro: {err}")
 
