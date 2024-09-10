@@ -21,7 +21,7 @@ def log_operacao(operacao, detalhes=""):
 conexao = mysql.connector.connect(host='localhost',
                                   database='doenca',
                                   user='root',
-                                  password='galodoido11')
+                                  password='pardal5link')
 
 if conexao.is_connected():
     print('Conectado ao Banco de Dados!')
@@ -298,6 +298,9 @@ def listar_doencas_a_partir_de_uma_lista_de_Sintomas():
     tamanho = len(criterio_sintomas)
 
     sintomas_str = ', '.join(f"'{sintoma}'" for sintoma in criterio_sintomas)
+    
+    log_operacao("Busca por Doenças a partir de Sintomas", f"Sintomas fornecidos: {', '.join(criterio_sintomas)}")
+
 
     try:
         query = f"""
@@ -339,6 +342,8 @@ def listar_doencas_a_partir_de_uma_lista_de_Sintomas():
                 lines.append(f"| {str(id).ljust(2)} | {Doença.ljust(19)} | {str(Total).ljust(8)} |")
             print("+----+---------------------+----------+")
             lines.append("+----+---------------------+----------+")
+            
+        log_operacao("Listagem de Doenças", f"Sintomas pesquisados: {', '.join(criterio_sintomas)}")
 
         escolha_doenca = input(f"A partir da lista, insira o ID da Doença que gostaria de pesquisar: ")
         lines.append("| ============================================================================================ |")
@@ -382,6 +387,8 @@ def listar_doencas_a_partir_de_uma_lista_de_Sintomas():
                 lines.append("| Sintomas                                                         |")
                 lines.append(f"| {sintomas.ljust(64)} |")
                 lines.append("+------------------------------------------------------------------+")
+                
+                log_operacao("Pesquisa de Doença", f"ID pesquisado: {escolha_doenca}")
 
                 y_position = height - top_margin 
 
@@ -401,10 +408,12 @@ def listar_doencas_a_partir_de_uma_lista_de_Sintomas():
        
         except mysql.connector.Error as err:
             print(f"Erro: {err}")
+            log_operacao("Erro ao Buscar Doença", f"Erro: {err}")
             return "Erro ao buscar a doença escolhida."
         
     except mysql.connector.Error as err:
         print(f"Erro: {err}")
+        log_operacao("Erro ao Buscar Doenças por Sintomas", f"Erro: {err}")
         return "Erro ao buscar sintomas."
 
 def listar_populares(id):
