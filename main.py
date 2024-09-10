@@ -1,6 +1,14 @@
 import mysql.connector
 import logging
 from mysql.connector import errorcode
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+
+global arquivos
+arquivos = 0
+
+global arquivos2
+arquivos2 = 0
 
 logging.basicConfig(filename='sistema.log', 
                     level=logging.INFO, 
@@ -13,7 +21,7 @@ def log_operacao(operacao, detalhes=""):
 conexao = mysql.connector.connect(host='localhost',
                                   database='doenca',
                                   user='root',
-                                  password='junior18')
+                                  password='galodoido11')
 
 if conexao.is_connected():
     print('Conectado ao Banco de Dados!')
@@ -153,6 +161,8 @@ def lista_sintomas():
         print(f"Erro: {err}")
 
 def pesquisar_doenca():
+    global arquivos
+    arquivos = arquivos +1
     print("1. Nome tecnico")
     print("2. Nome popular")
     print("3. CID")
@@ -191,6 +201,42 @@ def pesquisar_doenca():
                 sintomas = listar_sintomas(id)
             print(f"| {str(id).ljust(2)} | {nome_tecnico.ljust(19)} | {CID.ljust(8)} | {str(id_patogeno).ljust(10)} | {sintomas.ljust(44)}                |")
             print("+----+---------------------+----------+------------+-----------------------------------------------------------------------------------+")
+            
+            # ========================= ESCREVER PDF =======================
+            pdf_file_path = "relatorioPesquisa" + str(arquivos) + ".pdf"
+            c = canvas.Canvas(pdf_file_path, pagesize=letter)
+            width, height = letter
+
+            # Define as margens
+            left_margin = 50  # Margem esquerda
+            top_margin = 50    # Margem superior
+            line_height = 15   # Altura entre as linhas
+
+            font_size = 10
+            c.setFont("Helvetica", font_size)
+
+            lines = []
+
+            lines.append("+----+---------------------+----------+------------+-----------------------------------------------------------------------------------+")
+            lines.append("| ID | Nome Técnico        | CID      | ID Patógeno| Sintomas                                                                          |")
+            lines.append("+----+---------------------+----------+------------+-----------------------------------------------------------------------------------+")
+
+            for (id, nome_tecnico, CID, id_patogeno) in r:
+                sintomas = listar_sintomas(id)
+                lines.append(f"| {str(id).ljust(2)} | {nome_tecnico.ljust(19)} | {CID.ljust(8)} | {str(id_patogeno).ljust(10)} | {sintomas.ljust(44)}                |")
+
+            lines.append("+----+---------------------+----------+------------+-----------------------------------------------------------------------------------+")
+
+            y_position = height - top_margin 
+
+            for line in lines:
+                c.drawString(left_margin, y_position, line)
+                y_position -= line_height 
+
+            log_operacao("Criacao do relatorio PDF", f"Arquivo: {pdf_file_path}")
+            c.save()
+
+        
         log_operacao("Pesquisa de Doenca", f"Criterio: {criterio}, Valor: {valor}")
     except mysql.connector.Error as err:
         print(f"Erro: {err}")
@@ -219,11 +265,34 @@ def listar_sintomas(doenca_id):
         return "Erro ao buscar sintomas"
 
 def listar_doencas_a_partir_de_uma_lista_de_Sintomas():
+    global arquivos2
+    arquivos2 = arquivos2 +1
+    pdf_file_path = "relatorioListagem" + str(arquivos2) + ".pdf"
+    c = canvas.Canvas(pdf_file_path, pagesize=letter)
+    width, height = letter
+
+    # Define as margens
+    left_margin = 50  # Margem esquerda
+    top_margin = 20    # Margem superior
+    bottom_margin = 20
+    line_height = 15   # Altura entre as linhas
+
+    font_size = 10
+    c.setFont("Helvetica", font_size)
+
+    lines = []
+
     numero_sintomas = int(input("Insira quantos sintomas serão: "))
     criterio_sintomas = []
 
+    lines.append(f"Número de sintomas: {numero_sintomas}")
+    lines.append("| ============================================================================================ |")
+
     for i in range(numero_sintomas):
         sintoma = input(f"Insira o nome do sintoma ({i+1}): ")
+        lines.append(f"Nome do sintoma ({i+1}): {sintoma}")
+        lines.append("| ============================================================================================ |")
+
         criterio_sintomas.append(sintoma)
 
     tamanho = len(criterio_sintomas)
@@ -255,16 +324,25 @@ def listar_doencas_a_partir_de_uma_lista_de_Sintomas():
 
         if not resultados:
             print("Nenhuma doença encontrada com o critério fornecido.")
+            lines.append("| ============ Nenhuma doença encontrada! ========== |")
         else:
             print("+----+---------------------+----------+")
             print("| ID | Nome Técnico        | Pesos    |")                                                                     
             print("+----+---------------------+----------+")
 
+            lines.append("+----+---------------------+----------+")
+            lines.append("| ID | Nome Técnico        | Pesos    |")                                                                     
+            lines.append("+----+---------------------+----------+")
+
             for (id, Doença, Total) in resultados:
                 print(f"| {str(id).ljust(2)} | {Doença.ljust(19)} | {str(Total).ljust(8)} |")
+                lines.append(f"| {str(id).ljust(2)} | {Doença.ljust(19)} | {str(Total).ljust(8)} |")
             print("+----+---------------------+----------+")
+            lines.append("+----+---------------------+----------+")
 
         escolha_doenca = input(f"A partir da lista, insira o ID da Doença que gostaria de pesquisar: ")
+        lines.append("| ============================================================================================ |")
+        lines.append(f"ID da Doença pesquisada: {escolha_doenca}")
 
         try:
             query = f"""
@@ -277,10 +355,15 @@ def listar_doencas_a_partir_de_uma_lista_de_Sintomas():
             r = cursor.fetchall()
             if not r:
                 print("ID da doença não encontrada.")
+                lines.append("| ============ Nenhuma doença encontrada! ========== |")
             else:
                 print("+----+---------------------+----------+----------------------------------+-------------------+----------------------------------+")
                 print("| ID | Nome Técnico        | CID      | Patógenos                        | Tipo_de_Patogeno  | Nomes_Populares                  |")
                 print("+----+---------------------+----------+----------------------------------+-------------------+----------------------------------+")
+
+                lines.append("+----+---------------------+----------+----------------------------------+-------------------+----------------------------------+")
+                lines.append("| ID | Nome Técnico        | CID      | Patógenos                        | Tipo_de_Patogeno  | Nomes_Populares                  |")
+                lines.append("+----+---------------------+----------+----------------------------------+-------------------+----------------------------------+")
 
                 for (id, nome_tecnico, CID, Patogeno, Tipo_de_Patogeno) in r:
                     nomes_populares = listar_populares(id)
@@ -291,6 +374,30 @@ def listar_doencas_a_partir_de_uma_lista_de_Sintomas():
                 print("| Sintomas                                                         |")
                 print(f"| {sintomas.ljust(64)} |")
                 print("+------------------------------------------------------------------+")
+
+                lines.append(f"| {str(id).ljust(2)} | {nome_tecnico.ljust(19)} | {CID.ljust(8)} | {Patogeno.ljust(32)} |{Tipo_de_Patogeno.ljust(18)} | {nomes_populares.ljust(32)} |")
+                lines.append("+----+---------------------+----------+----------------------------------+-------------------+----------------------------------+")
+                lines.append("+------------------------------------------------------------------+")
+                lines.append("| ============================================================================================ |")
+                lines.append("| Sintomas                                                         |")
+                lines.append(f"| {sintomas.ljust(64)} |")
+                lines.append("+------------------------------------------------------------------+")
+
+                y_position = height - top_margin 
+
+                for line in lines:
+                    if y_position < bottom_margin:
+                        c.showPage()
+                        y_position = height - top_margin
+                        c.setFont("Helvetica", font_size)
+
+                    c.drawString(left_margin, y_position, line)
+                    y_position -= line_height 
+
+                log_operacao("Criacao do relatorio PDF", f"Arquivo: {pdf_file_path}")
+                c.save()
+
+
        
         except mysql.connector.Error as err:
             print(f"Erro: {err}")
