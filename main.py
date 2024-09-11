@@ -21,7 +21,7 @@ def log_operacao(operacao, detalhes=""):
 conexao = mysql.connector.connect(host='localhost',
                                   database='doenca',
                                   user='root',
-                                  password='pardal5link')
+                                  password='felipe')
 
 if conexao.is_connected():
     print('Conectado ao Banco de Dados!')
@@ -115,17 +115,43 @@ def inserir_doenca():
         
         id_doenca = cursor.lastrowid
 
-        opcao = input("Deseja inserir um nome popular para a doença? (s/n): ").lower()
-        log_operacao("Opcao de Inserir Nome Popular", f"Escolha: {opcao}")
+        while True:
+            opcao = input("Deseja inserir um nome popular para a doença? (s/n): ").lower()
+            log_operacao("Opcao de Inserir Nome Popular", f"Escolha: {opcao}")
+            if opcao in ['s', 'n']:
+                break
+            else:
+                print("Entrada inválida. Por favor, insira 's' para sim ou 'n' para não.")
+        
         if opcao == 's':
             inserir_nome_popular_com_parametro(id_doenca)
-   
-        opcao = input("Deseja associar sintomas à doença? (s/n): ").lower()
-        log_operacao("Opcao de Associar Sintomas", f"Escolha: {opcao}")
+
+        while True:
+            opcao = input("Deseja associar sintomas à doença? (s/n): ").lower()
+            log_operacao("Opcao de Associar Sintomas", f"Escolha: {opcao}")
+            if opcao in ['s', 'n']:
+                break
+            else:
+                print("Entrada inválida. Por favor, insira 's' para sim ou 'n' para não.")
+        
         if opcao == 's':
             lista_sintomas()
             inserir_apresenta_com_parametro(id_doenca)
-      
+
+            while True:
+                while True:
+                    adicionar_mais_sintomas = input("Deseja adicionar mais sintomas? (s/n): ").lower()
+                    if adicionar_mais_sintomas in ['s', 'n']:
+                        break
+                    else:
+                        print("Entrada inválida. Por favor, insira 's' para sim ou 'n' para não.")
+                
+                if adicionar_mais_sintomas == 's':
+                    lista_sintomas()
+                    inserir_apresenta_com_parametro(id_doenca)
+                else:
+                    break
+        
         log_operacao("Finalizacao da Insercao de Doenca", f"Doenca ID: {id_doenca} inserida com sucesso.")
     
     except mysql.connector.Error as err:
@@ -157,9 +183,19 @@ def inserir_nome_popular_com_parametro(id_doenca):
 def inserir_apresenta_com_parametro(id_doenca):
     data_apresenta = {
         'doença_id': id_doenca,
-        'sintoma_id': int(input("Digite o ID do sintoma: ")),
-        'frequencia': input("Digite a frequência: ")
+        'sintoma_id': int(input("Digite o ID do sintoma: "))
     }
+    
+    frequencias_permitidas = ['pouco comum', 'comum', 'muito comum', 'raro', 'muito raro']
+
+    while True:
+        frequencia = input("Digite a frequência (pouco comum, comum, muito comum, raro, muito raro): ").lower()
+        if frequencia in frequencias_permitidas:
+            data_apresenta['frequencia'] = frequencia
+            break
+        else:
+            print("Entrada inválida. Por favor, insira uma das opções: pouco comum, comum, muito comum, raro, muito raro.")
+    
     try:
         cursor.execute(add_apresenta, data_apresenta)
         conexao.commit()
@@ -185,11 +221,35 @@ def inserir_nome_popular():
             print(f"Erro: {err}")
 
 def inserir_apresenta():
+    while True:
+        try:
+            doenca_id = int(input("Digite o ID da doença: "))
+            break
+        except ValueError:
+            print("Entrada inválida. Por favor, insira um número inteiro válido para o ID da doença.")
+    
+    while True:
+        try:
+            sintoma_id = int(input("Digite o ID do sintoma: "))
+            break
+        except ValueError:
+            print("Entrada inválida. Por favor, insira um número inteiro válido para o ID do sintoma.")
+    
+    frequencias_permitidas = ['pouco comum', 'comum', 'muito comum', 'raro', 'muito raro']
+
+    while True:
+        frequencia = input("Digite a frequência (pouco comum, comum, muito comum, raro, muito raro): ").lower()
+        if frequencia in frequencias_permitidas:
+            break
+        else:
+            print("Entrada inválida. Por favor, insira uma das opções: pouco comum, comum, muito comum, raro, muito raro.")
+    
     data_apresenta = {
-        'doença_id': int(input("Digite o ID da doença: ")),
-        'sintoma_id': int(input("Digite o ID do sintoma: ")),
-        'frequencia': input("Digite a frequência: ")
+        'doença_id': doenca_id,
+        'sintoma_id': sintoma_id,
+        'frequencia': frequencia
     }
+    
     try:
         cursor.execute(add_apresenta, data_apresenta)
         conexao.commit()
