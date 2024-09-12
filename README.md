@@ -19,7 +19,7 @@ A verão do Python utilizada foi a 3.12.5.
 
 # Configuração do Banco
 
-Para acessar o banco de dados do MariaDB(HeidiSQL) é necessário que seja trocado os dados de acordo com a sua máquina. No arquivo main.py nas linhas 23 e 24, segue um exemplo da função:
+Para acessar o banco de dados do MariaDB(HeidiSQL) é necessário que seja trocado os dados de acordo com a sua máquina. No arquivo main.py nas linhas 26 e 27, segue um exemplo da função:
 
 ```
   conexao = mysql.connector.connect(host='localhost',

@@ -10,6 +10,9 @@ arquivos = 0
 global arquivos2
 arquivos2 = 0
 
+#----------------------------------------------------------------------------------------------------------------------------------------------#
+# CONEXÃO E ORGANIZAÇÃO DO BANCO DE DADOS#
+
 logging.basicConfig(filename='sistema.log', 
                     level=logging.INFO, 
                     format='%(asctime)s - %(levelname)s - %(message)s', 
@@ -21,7 +24,7 @@ def log_operacao(operacao, detalhes=""):
 conexao = mysql.connector.connect(host='localhost',
                                   database='doenca',
                                   user='root',
-                                  password='felipe')
+                                  password='junior18')
 
 if conexao.is_connected():
     print('Conectado ao Banco de Dados!')
@@ -48,6 +51,9 @@ add_nome_popular = ("INSERT INTO nomes_populares"
 add_apresenta = ("INSERT INTO apresenta"
                  "(doença_id, sintoma_id, frequencia)"
                  "VALUES (%(doença_id)s, %(sintoma_id)s, %(frequencia)s)")
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# QUESTÃO 1 #
 
 def inserir_patogeno():
     data_patogeno = {
@@ -261,6 +267,10 @@ def inserir_apresenta():
         else:
             print(f"Erro: {err}")
 
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# QUESTÃO 2 #
+
 def lista_doenca():
     try:
         cursor.execute('SELECT * FROM doença;')
@@ -415,6 +425,28 @@ def listar_sintomas(doenca_id):
         print(f"Erro: {err}")
         return "Erro ao buscar sintomas"
 
+def listar_populares(id):
+    try:
+        query = ("""
+            SELECT GROUP_CONCAT(CONCAT(np.nome)) AS Nome_Popular
+            FROM nomes_populares AS np
+            WHERE np.`doença_id` = %s;
+        """)
+        cursor.execute(query, (id,))
+        row = cursor.fetchone()
+
+        if row and row[0]:
+            return row[0]
+        else:
+            return "Nenhum nome popular encontrado"
+
+    except mysql.connector.Error as err:
+        print(f"Erro: {err}")
+        return "Erro ao buscar nome popular."
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# QUESTÃO 3 #
+
 def listar_doencas_a_partir_de_uma_lista_de_Sintomas():
     global arquivos2
     arquivos2 = arquivos2 +1
@@ -528,6 +560,7 @@ def listar_doencas_a_partir_de_uma_lista_de_Sintomas():
                 print("+----+---------------------+----------+----------------------------------+-------------------+----------------------------------+")
                 print("+------------------------------------------------------------------+")
                 print("| Sintomas                                                         |")
+                print("+------------------------------------------------------------------+")
                 print(f"| {sintomas.ljust(64)} |")
                 print("+------------------------------------------------------------------+")
 
@@ -566,25 +599,10 @@ def listar_doencas_a_partir_de_uma_lista_de_Sintomas():
         print(f"Erro: {err}")
         log_operacao("Erro ao Buscar Doenças por Sintomas", f"Erro: {err}")
         return "Erro ao buscar sintomas."
+    
 
-def listar_populares(id):
-    try:
-        query = ("""
-            SELECT GROUP_CONCAT(CONCAT(np.nome)) AS Nome_Popular
-            FROM nomes_populares AS np
-            WHERE np.`doença_id` = %s;
-        """)
-        cursor.execute(query, (id,))
-        row = cursor.fetchone()
-
-        if row and row[0]:
-            return row[0]
-        else:
-            return "Nenhum nome popular encontrado"
-
-    except mysql.connector.Error as err:
-        print(f"Erro: {err}")
-        return "Erro ao buscar nome popular."
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# MAIN #
 
 def menu():
     while True:
@@ -597,7 +615,7 @@ def menu():
         print("6. Listar Doenças")
         print("7. Listar Sintomas")
         print("8. Pesquisar Doença")
-        print("9. Listar Doenças a partir de uma lista de Sintomas")
+        print("9. Diagnóstico")
         print("0. Sair")
         escolha = input("Escolha uma opção: ")
 
