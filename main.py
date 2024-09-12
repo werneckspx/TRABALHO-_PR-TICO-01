@@ -24,7 +24,7 @@ def log_operacao(operacao, detalhes=""):
 conexao = mysql.connector.connect(host='localhost',
                                   database='doenca',
                                   user='root',
-                                  password='junior18')
+                                  password='')
 
 if conexao.is_connected():
     print('Conectado ao Banco de Dados!')
